@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">Youtu</string>
+    <array name="program_list">
+        <item>one</item>
+        <item>two</item>
+        <item>three</item>
+        <item>four</item>
+        <item>five</item>
+        <item>six</item>
+        <item>seven</item>
+        <item>eight</item>
+        <item>nine</item>
+        <item>ten</item>
+        <item>one</item>
+        <item>two</item>
+        <item>three</item>
+        <item>four</item>
+        <item>five</item>
+        <item>six</item>
+        <item>seven</item>
+        <item>eight</item>
+        <item>nine</item>
+        <item>ten</item>
+        <item>one</item>
+        <item>two</item>
+        <item>three</item>
+        <item>four</item>
+        <item>five</item>
+        <item>six</item>
+        <item>seven</item>
+        <item>eight</item>
+        <item>nine</item>
+        <item>ten</item>
+    </array>
+    <string name="longName">
+        YouTube, LLC is an American video-sharing website headquartered in San Bruno, California.\n
+        Three former PayPal employees—Chad Hurley, Steve Chen, and Jawed Karim—created the service in February 2005.\n
+        Google bought the site in November 2006 for US$1.65 billion; YouTube now operates as one of Google\'s subsidiaries.\n\n
+        YouTube allows users to upload, view, rate, share, add to favorites, report, comment on videos, and subscribe to other users.\n
+        It offers a wide variety of user-generated and corporate media videos.\n
+        Available content includes video clips, TV show clips, music videos, short and documentary films, audio recordings, movie trailers, live streams, and other content such as video blogging, short original videos, and educational videos.\n\n
+        Most of the content on YouTube is uploaded by individuals, but media corporations including CBS, the BBC, Vevo, and Hulu offer some of their material via YouTube as part of the YouTube partnership program.\n\n
+        Unregistered users can only watch videos on the site, while registered users are permitted to upload an unlimited number of videos and add comments to videos.\n\n
+        Videos deemed potentially inappropriate are available only to registered users affirming themselves to be at least 18 years old.\n
+    </string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/topToolsView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#00000000"
+    tools:background="#000000">
+
+    <ImageView
+        android:id="@+id/downIv"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_margin="16dp"
+        android:src="@drawable/down" />
+
+    <ImageView
+        android:id="@+id/statusIv"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center"
+        tools:src="@drawable/play_white" />
+
+    <ImageView
+        android:id="@+id/fullScreenIv"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:src="@drawable/full_screen" />
+
+</FrameLayout>
