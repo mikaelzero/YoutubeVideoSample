@@ -200,16 +200,19 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
      * @param deleteStatusBar 是否需要删除状态栏高度 全屏时切换后需要删除高度
      */
     public void resetRangeAndSize(boolean exchange, boolean deleteStatusBar) {
+
         if (exchange) {
+            mTopViewOriginalWidth = this.getMeasuredHeight();
+            resetTopOriginHeight(true);
             mRangeScrollY = this.getMeasuredWidth() - MIN_RATIO_HEIGHT * mTopOriginalHeight - bottomHeight;
             mRangeNodeScrollY = this.getMeasuredWidth() - MIN_RATIO_HEIGHT_NODE * mTopOriginalHeight - bottomHeight;
-            mTopViewOriginalWidth = this.getMeasuredHeight();
             mBackgroundOriginalHeight = this.getMeasuredWidth();
         } else {
+            mTopViewOriginalWidth = this.getMeasuredWidth();
+            resetTopOriginHeight(false);
             mRangeScrollY = this.getMeasuredHeight() - MIN_RATIO_HEIGHT * mTopOriginalHeight - bottomHeight;
             mRangeNodeScrollY = this.getMeasuredHeight() - MIN_RATIO_HEIGHT_NODE * mTopOriginalHeight - bottomHeight;
             mBackgroundOriginalHeight = this.getMeasuredHeight();
-            mTopViewOriginalWidth = this.getMeasuredWidth();
         }
         finalVideoLeftRightOffset = (int) ((mTopViewOriginalWidth - mTopViewOriginalWidth * MIN_RATIO_WIDTH) / 2);
         if (deleteStatusBar) {
@@ -219,6 +222,19 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             }
         }
 
+    }
+
+    void resetTopOriginHeight(boolean exchange) {
+        if (isLandscape()) {
+            mTopOriginalHeight = exchange ? this.getMeasuredWidth() : this.getMeasuredHeight();
+            MIN_RATIO_HEIGHT_NODE = 0.35f;
+            MIN_RATIO_HEIGHT = 0.25f;
+            mDetailView.setVisibility(View.GONE);
+        } else {
+            mTopOriginalHeight = (mTopViewOriginalWidth / VIDEO_RATIO);
+            MIN_RATIO_HEIGHT_NODE = 0.45f;
+            MIN_RATIO_HEIGHT = 0.35f;
+        }
     }
 
     void notifyStatus() {
