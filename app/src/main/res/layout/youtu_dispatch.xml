@@ -14,20 +14,11 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <FrameLayout
-            android:id="@+id/topView"
+        <org.salient.artplayer.VideoView
+            android:id="@+id/videoView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="start">
-
-            <TextureView
-                android:id="@+id/videoView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="start" />
-
-            <include layout="@layout/youtu_top_tools" />
-        </FrameLayout>
+            android:layout_gravity="start" />
 
         <FrameLayout
             android:layout_width="wrap_content"

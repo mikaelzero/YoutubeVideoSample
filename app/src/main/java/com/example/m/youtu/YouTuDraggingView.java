@@ -40,6 +40,8 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         void videoSize(int width, int height);
 
         void onIconClick(IconType iconType);
+
+        void videoToolVisible(int visible);
     }
 
     enum IconType {
@@ -59,17 +61,14 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     View closeIv;
     View pauseLayout;
     View closeLayout;
-    ImageView statusIv;
-    ImageView fullScreenIv;
-    View topToolsView;
     Activity mActivity;
 
     MarginViewWrapper mBackgroundViewWrapper;
+    //头部的视频View
     MarginViewWrapper mTopViewWrapper;
     MarginViewWrapper titleWrapper;
     MarginViewWrapper pauseIvWrapper;
     MarginViewWrapper closeIvWrapper;
-    MarginViewWrapper topToolsViewWrapper;
 
     //滑动区间,取值为是topView最小化时距离屏幕顶端的高度
     float mRangeScrollY;
@@ -114,41 +113,37 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         init();
     }
 
+
     private void init() {
         mActivity = getActivityFromView(this);
         addView(LayoutInflater.from(getContext()).inflate(R.layout.youtu_dispatch, null), 0);
         mBackgroundView = findViewById(R.id.backgroundView);
-        View mTopView = findViewById(R.id.topView);
-        topToolsView = findViewById(R.id.topToolsView);
-        ImageView downIv = findViewById(R.id.downIv);
-        fullScreenIv = findViewById(R.id.fullScreenIv);
+        View mTopView = findViewById(R.id.videoView);
         mDetailView = findViewById(R.id.detailView);
         titleLayout = findViewById(R.id.titleLayout);
         pauseLayout = findViewById(R.id.pauseLayout);
         closeLayout = findViewById(R.id.closeLayout);
         pauseIv = findViewById(R.id.pauseIv);
         closeIv = findViewById(R.id.closeIv);
-        statusIv = findViewById(R.id.statusIv);
         pauseIv.setBackgroundResource(R.drawable.pause);
-        statusIv.setBackgroundResource(R.drawable.pause_white);
         mBackgroundView.setParentView(this);
         setBackgroundColor(Color.BLACK);
-        downIv.setOnClickListener(this);
-        fullScreenIv.setOnClickListener(this);
         mTopView.setOnClickListener(this);
         pauseLayout.setOnClickListener(this);
         closeLayout.setOnClickListener(this);
         titleLayout.setOnClickListener(this);
-        statusIv.setOnClickListener(this);
 
         //初始化包装类
-        topToolsViewWrapper = new MarginViewWrapper(topToolsView);
         mBackgroundViewWrapper = new MarginViewWrapper(mBackgroundView);
         mTopViewWrapper = new MarginViewWrapper(mTopView);
         titleWrapper = new MarginViewWrapper(titleLayout);
         pauseIvWrapper = new MarginViewWrapper(pauseLayout);
         closeIvWrapper = new MarginViewWrapper(closeLayout);
 
+        initData();
+    }
+
+    private void initData() {
         //当前缩放比例
         nowStateScale = 1f;
 
@@ -172,13 +167,9 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         mTopViewWrapper.setHeight(mTopOriginalHeight);
         mTopViewWrapper.setWidth(mTopViewOriginalWidth);
 
-        topToolsViewWrapper.setHeight(mTopOriginalHeight);
-        topToolsViewWrapper.setWidth(mTopViewOriginalWidth);
-
         if (MIN_RATIO_HEIGHT_NODE < MIN_RATIO_HEIGHT) {
             throw new RuntimeException("MIN_RATIO_HEIGHT_NODE can't smaller than MIN_RATIO_HEIGHT_NODE");
         }
-
     }
 
     public Boolean isLandscape() {
@@ -188,45 +179,15 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        resetRangeAndSize(false, false);
+        e("11111111111111111111111");
+        resetRangeAndSize();
     }
+
 
     public void resetRangeAndSize() {
-        resetRangeAndSize(true, true);
-    }
-
-    /**
-     * @param exchange        是否需要对换宽高
-     * @param deleteStatusBar 是否需要删除状态栏高度 全屏时切换后需要删除高度
-     */
-    public void resetRangeAndSize(boolean exchange, boolean deleteStatusBar) {
-
-        if (exchange) {
-            mTopViewOriginalWidth = this.getMeasuredHeight();
-            resetTopOriginHeight(true);
-            mRangeScrollY = this.getMeasuredWidth() - MIN_RATIO_HEIGHT * mTopOriginalHeight - bottomHeight;
-            mRangeNodeScrollY = this.getMeasuredWidth() - MIN_RATIO_HEIGHT_NODE * mTopOriginalHeight - bottomHeight;
-            mBackgroundOriginalHeight = this.getMeasuredWidth();
-        } else {
-            mTopViewOriginalWidth = this.getMeasuredWidth();
-            resetTopOriginHeight(false);
-            mRangeScrollY = this.getMeasuredHeight() - MIN_RATIO_HEIGHT * mTopOriginalHeight - bottomHeight;
-            mRangeNodeScrollY = this.getMeasuredHeight() - MIN_RATIO_HEIGHT_NODE * mTopOriginalHeight - bottomHeight;
-            mBackgroundOriginalHeight = this.getMeasuredHeight();
-        }
-        finalVideoLeftRightOffset = (int) ((mTopViewOriginalWidth - mTopViewOriginalWidth * MIN_RATIO_WIDTH) / 2);
-        if (deleteStatusBar) {
-            if (!activityFullscreen) {
-                mRangeScrollY = mRangeScrollY - DensityUtil.getStatusBarH(getContext());
-                mRangeNodeScrollY = mRangeNodeScrollY - DensityUtil.getStatusBarH(getContext());
-            }
-        }
-
-    }
-
-    void resetTopOriginHeight(boolean exchange) {
+        mTopViewOriginalWidth = DensityUtil.getScreenW(getContext());
         if (isLandscape()) {
-            mTopOriginalHeight = exchange ? this.getMeasuredWidth() : this.getMeasuredHeight();
+            mTopOriginalHeight = activityFullscreen ? DensityUtil.getScreenH(getContext()) : DensityUtil.getScreenOriginH(getContext());
             MIN_RATIO_HEIGHT_NODE = 0.35f;
             MIN_RATIO_HEIGHT = 0.25f;
             mDetailView.setVisibility(View.GONE);
@@ -235,18 +196,21 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             MIN_RATIO_HEIGHT_NODE = 0.45f;
             MIN_RATIO_HEIGHT = 0.35f;
         }
+        float height = activityFullscreen ? DensityUtil.getScreenH(getContext()) : DensityUtil.getScreenOriginH(getContext());
+        mRangeScrollY = height - MIN_RATIO_HEIGHT * mTopOriginalHeight - bottomHeight;
+        mRangeNodeScrollY = height - MIN_RATIO_HEIGHT_NODE * mTopOriginalHeight - bottomHeight;
+        mBackgroundOriginalHeight = height;
+        finalVideoLeftRightOffset = (int) ((mTopViewOriginalWidth - mTopViewOriginalWidth * MIN_RATIO_WIDTH) / 2);
     }
 
     void notifyStatus() {
         if (statusType == IconType.PLAY) {
             statusType = IconType.PAUSE;
             pauseIv.setBackgroundResource(R.drawable.play);
-            statusIv.setBackgroundResource(R.drawable.play_white);
             mCallback.onIconClick(IconType.PAUSE);
         } else {
             statusType = IconType.PLAY;
             pauseIv.setBackgroundResource(R.drawable.pause);
-            statusIv.setBackgroundResource(R.drawable.pause_white);
             mCallback.onIconClick(IconType.PLAY);
         }
     }
@@ -298,7 +262,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         float detailPercent = m / mRangeNodeScrollY;
 
 
-        e("mTopViewOriginalWidth:" + mTopViewOriginalWidth);
         int videoLeftRightOffset = (int) ((mTopViewOriginalWidth - mTopViewOriginalWidth * videoNodeWidthPercent) / 2);
         int detailBottomOffset = Math.round(bottomHeight * detailPercent);
         //不能超过底部间距
@@ -320,8 +283,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
             mTopViewWrapper.setHeight(offHeight2);
             mTopViewWrapper.setWidth(topViewWidth);
-            topToolsViewWrapper.setHeight(offHeight2);
-            topToolsViewWrapper.setWidth(topViewWidth);
 
             //头部达到最小宽度时,滑动的宽度
             float pieceWidth = mTopViewOriginalWidth * MIN_RATIO_WIDTH / 3;
@@ -368,8 +329,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             mBackgroundViewWrapper.setHeight(Math.round(mBackgroundOriginalHeight * videoNodeHeightPercent));
             mTopViewWrapper.setWidth(Math.round(mTopViewOriginalWidth * videoNodeWidthPercent));
             mTopViewWrapper.setHeight(Math.round(mTopOriginalHeight * videoNodeHeightPercent));
-            topToolsViewWrapper.setHeight(Math.round(mTopOriginalHeight * videoNodeHeightPercent));
-            topToolsViewWrapper.setWidth(Math.round(mTopViewOriginalWidth * videoNodeWidthPercent));
 
             mBackgroundViewWrapper.setMarginTop(m);
         }
@@ -381,10 +340,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         this.getBackground().setAlpha((int) (marginPercent * 255 * 0.6f));
         mCallback.videoSize(mTopViewWrapper.getWidth(), mTopViewWrapper.getHeight());
         mBackgroundView.setAlpha(1);
-    }
-
-    public int getScreenHeight() {
-        return DensityUtil.getScreenH(getContext()) - DensityUtil.getStatusBarH(getContext());
     }
 
     void dismissView() {
@@ -436,13 +391,13 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     public void fullScreenGoMin() {
         if (isLandscape()) {
             nowStateScale = MIN_RATIO_HEIGHT;
-            topToolsView.setVisibility(View.GONE);
+            mCallback.videoToolVisible(View.GONE);
             if (!activityFullscreen) {
                 mActivity.getWindow().clearFlags(
                         WindowManager.LayoutParams.FLAG_FULLSCREEN);
             }
 
-            resetRangeAndSize(false, true);
+            resetRangeAndSize();
             mBackgroundViewWrapper.setMarginTop(Math.round(mRangeScrollY));
             updateVideoView(Math.round(mRangeScrollY));
         } else {
@@ -455,11 +410,8 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
      */
     public void goLandscapeMin() {
         nowStateScale = MIN_RATIO_HEIGHT;
-        topToolsView.setVisibility(View.GONE);
-
+        mCallback.videoToolVisible(View.GONE);
         resetRangeAndSize();
-        //获取的this.getMeasuredHeight()是减去状态栏高度的高度 所以变为原状态时需要将高度加回
-        mTopViewOriginalWidth = mTopViewOriginalWidth + (activityFullscreen ? 0 : DensityUtil.getStatusBarH(getContext()));
         mBackgroundViewWrapper.setMarginTop(Math.round(mRangeScrollY));
         updateVideoView(Math.round(mRangeScrollY));
     }
@@ -469,10 +421,9 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
      */
     public void goPortraitMin() {
         nowStateScale = MIN_RATIO_HEIGHT;
-        topToolsView.setVisibility(View.GONE);
+        mCallback.videoToolVisible(View.GONE);
 
         resetRangeAndSize();
-        mTopViewOriginalWidth = mTopViewOriginalWidth + (activityFullscreen ? 0 : DensityUtil.getStatusBarH(getContext()));
         mBackgroundViewWrapper.setMarginTop(Math.round(mRangeScrollY));
         updateVideoView(Math.round(mRangeScrollY));
     }
@@ -483,15 +434,14 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
         nowStateScale = 1f;
-        topToolsView.setVisibility(View.VISIBLE);
+        mCallback.videoToolVisible(View.VISIBLE);
         resetRangeAndSize();
         mBackgroundViewWrapper.setMarginTop(0);
         updateVideoView(0);
-//        goMax();
     }
 
     public void goFullScreen() {
-        topToolsView.setVisibility(View.VISIBLE);
+        mCallback.videoToolVisible(View.VISIBLE);
         if (!activityFullscreen) {
             mActivity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -500,8 +450,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         mBackgroundViewWrapper.setHeight(DensityUtil.getScreenH(getContext()));
         mTopViewWrapper.setWidth(DensityUtil.getScreenW(getContext()));
         mTopViewWrapper.setHeight(DensityUtil.getScreenH(getContext()));
-        topToolsViewWrapper.setWidth(DensityUtil.getScreenW(getContext()));
-        topToolsViewWrapper.setHeight(DensityUtil.getScreenH(getContext()));
         mCallback.videoSize(mTopViewWrapper.getWidth(), mTopViewWrapper.getHeight());
     }
 
@@ -522,7 +470,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
                 updateVideoView((int) value);
                 if (value == 0) {
-                    topToolsView.setVisibility(View.VISIBLE);
+                    mCallback.videoToolVisible(View.VISIBLE);
                     if (isLandscape()) {
                         goFullScreen();
                     }
@@ -536,11 +484,12 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
 
     public void goMin() {
-        topToolsView.setVisibility(View.GONE);
+        mCallback.videoToolVisible(View.GONE);
         goMin(false);
     }
 
     public void goMin(final boolean isDismissToMin) {
+        nowStateScale = MIN_RATIO_HEIGHT;
         final float fullTop = Math.abs(mBackgroundViewWrapper.getMarginTop() - mRangeScrollY);
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(mBackgroundViewWrapper.getMarginTop(), mRangeScrollY);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -555,7 +504,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
                     p.width = -2;
                     p.height = -2;
                     setLayoutParams(p);
-                    nowStateScale = MIN_RATIO_HEIGHT;
                 }
             }
         });
@@ -690,11 +638,9 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
                     mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                 }
                 break;
-            case R.id.topView:
+            case R.id.videoView:
                 if (getNowStateScale() == MIN_RATIO_HEIGHT) {
                     goMax();
-                } else if (getNowStateScale() == 1f) {
-                    topToolsView.setVisibility(topToolsView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
                 }
                 break;
             case R.id.pauseLayout:
@@ -725,7 +671,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             //当前屏幕为横屏
             if (getNowStateScale() == 1f) {
                 goFullScreen();
-            } else if (getNowStateScale() == MIN_RATIO_HEIGHT) {
+            } else {
                 goLandscapeMin();
             }
 
@@ -733,10 +679,9 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             //当前屏幕为竖屏
             if (getNowStateScale() == 1f) {
                 goPortraitMax();
-            } else if (getNowStateScale() == MIN_RATIO_HEIGHT) {
+            } else {
                 goPortraitMin();
             }
-
         }
     }
 }

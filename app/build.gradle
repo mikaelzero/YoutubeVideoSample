@@ -24,4 +24,12 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    implementation 'org.salient.artvideoplayer:artplayer-java:0.6.0'
+    // Default control panel: optional
+    implementation 'org.salient.artvideoplayer:artplayer-ui:0.6.0'
+
+    //ijkPlayer: optional
+    implementation 'org.salient.artvideoplayer:artplayer-ijk:0.6.0'
+    implementation "org.salient.artvideoplayer:artplayer-armv7a:0.6.0"
 }

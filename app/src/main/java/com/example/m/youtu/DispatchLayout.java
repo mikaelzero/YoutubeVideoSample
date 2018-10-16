@@ -59,7 +59,7 @@ public class DispatchLayout extends LinearLayout {
                 if (Math.abs(y - mClickY) > touchSlop) {
                     dy = y - mLastY;
                     if (!parentView.isLandscape()) {
-                        parentView.topToolsView.setVisibility(View.GONE);
+                        parentView.mCallback.videoToolVisible(View.GONE);
                     }
                     int newMarY = parentView.mBackgroundViewWrapper.getMarginTop() + dy;
                     if (newMarY > parentView.mRangeScrollY && parentView.nowStateScale == parentView.MIN_RATIO_HEIGHT &&

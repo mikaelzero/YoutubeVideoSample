@@ -43,6 +43,10 @@ public class DensityUtil {
         return c.getResources().getDisplayMetrics().heightPixels;
     }
 
+    public static int getScreenOriginH(Context c) {
+        return getScreenH(c)-getStatusBarH(c);
+    }
+
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     public static int getScreenRealH(Context context) {
         int h;
