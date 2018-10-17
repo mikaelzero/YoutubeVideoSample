@@ -8,17 +8,15 @@
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"/>
 
-    </ListView>
     <com.example.m.youtu.YouTuDraggingView
         android:id="@+id/youtube_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:visibility="invisible">
-    </com.example.m.youtu.YouTuDraggingView>
+        android:visibility="invisible"/>
 
 
 </FrameLayout>

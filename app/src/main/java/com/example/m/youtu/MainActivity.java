@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.salient.artplayer.MediaPlayerManager;
 import org.salient.artplayer.ScaleType;
@@ -29,14 +30,14 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
     private VideoView mVideoView;
     private YouTuDraggingView mYouTuDraggingView;
     String TAG = "Youtu";
-    ControlPanel controlPanel;
+    YoutubeControlPanel controlPanel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         ListView listView = findViewById(R.id.list_view);
         listView.setAdapter(ArrayAdapter.createFromResource(this, R.array.program_list, android.R.layout.simple_list_item_1));
@@ -50,17 +51,22 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
         mYouTuDraggingView = findViewById(R.id.youtube_view);
         mYouTuDraggingView.setCallback(this);
 
-        controlPanel = new ControlPanel(this);
+        controlPanel = new YoutubeControlPanel(this);
         mVideoView.setControlPanel(controlPanel);
+    }
+
+    private void playVideo() {
+        mYouTuDraggingView.show();
         mVideoView.setUp("http://vfx.mtime.cn/Video/2018/06/01/mp4/180601113115887894.mp4");
         mVideoView.start();
         MediaPlayerManager.instance().setScreenScale(ScaleType.SCALE_CENTER_CROP);
     }
 
-    private void playVideo() {
-        mYouTuDraggingView.show();
+    @Override
+    protected void onDestroy() {
+        MediaPlayerManager.instance().releaseMediaPlayer();
+        super.onDestroy();
     }
-
 
     @Override
     public void onIconClick(YouTuDraggingView.IconType iconType) {
@@ -79,8 +85,8 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
     }
 
     @Override
-    public void videoToolVisible(int visible) {
-        controlPanel.setVisibility(visible);
+    public void status(int status) {
+        controlPanel.setVisibility(status == 1 ? View.VISIBLE : View.GONE);
     }
 
     @Override
