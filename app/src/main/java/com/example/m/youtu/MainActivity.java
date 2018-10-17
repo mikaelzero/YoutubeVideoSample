@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
 
     private VideoView mVideoView;
     private YouTuDraggingView mYouTuDraggingView;
-    String TAG = "Youtu";
     YoutubeControlPanel controlPanel;
 
     @Override
@@ -53,6 +52,18 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
 
         controlPanel = new YoutubeControlPanel(this);
         mVideoView.setControlPanel(controlPanel);
+        controlPanel.getFullScreenIv().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mYouTuDraggingView.fullScreenChange();
+            }
+        });
+        controlPanel.getDownIv().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mYouTuDraggingView.fullScreenGoMin();
+            }
+        });
     }
 
     private void playVideo() {

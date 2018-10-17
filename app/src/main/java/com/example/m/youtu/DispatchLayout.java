@@ -36,7 +36,6 @@ public class DispatchLayout extends LinearLayout {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.e("jwc","dispatch");
         if (parentView.getNowStateScale() == 1f && parentView.isLandscape()) {
             return super.dispatchTouchEvent(ev);
         }
@@ -49,15 +48,12 @@ public class DispatchLayout extends LinearLayout {
             firstClickY = 0;
             return super.dispatchTouchEvent(ev);
         }
-        Log.e("jwc","before switch");
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                Log.e("jwc","ACTION_DOWN");
                 mClickY = y;
                 mVelocityTracker = VelocityTracker.obtain();
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.e("jwc","ACTION_MOVE");
                 mVelocityTracker.addMovement(ev);
                 //drag
                 if (Math.abs(y - mClickY) > touchSlop) {
@@ -70,11 +66,10 @@ public class DispatchLayout extends LinearLayout {
                     } else {
                         parentView.updateVideoView(newMarY);
                     }
-                    break;
                 }
+                break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                Log.e("jwc","ACTION_UP||ACTION_CANCEL");
                 firstClickY = 0;
                 if (Math.abs(y - mClickY) > touchSlop) {
                     mVelocityTracker.computeCurrentVelocity(100);
@@ -82,24 +77,10 @@ public class DispatchLayout extends LinearLayout {
                     mVelocityTracker.clear();
                     mVelocityTracker.recycle();
                     parentView.confirmState(yVelocity, dy);
-                    return true;
                 }
-//                else if (parentView.getNowStateScale() == parentView.MIN_RATIO_HEIGHT) {
-//                    parentView.goMax();
-//                }
 
         }
         mLastY = y;
         return super.dispatchTouchEvent(ev);
-    }
-
-//    @Override
-//    public boolean onTouchEvent(MotionEvent event) {
-//        //接管touch  避免事件穿透
-//        return true;
-//    }
-
-    public void e(String msg) {
-        Log.e("Youtu", msg);
     }
 }

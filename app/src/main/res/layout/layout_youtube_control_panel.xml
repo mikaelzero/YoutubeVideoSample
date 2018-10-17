@@ -32,7 +32,7 @@
             tools:visibility="visible">
 
             <ImageView
-                android:id="@+id/ivLeft"
+                android:id="@+id/downIv"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_centerVertical="true"
@@ -44,7 +44,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toRightOf="@id/ivLeft"
+                android:layout_toRightOf="@id/downIv"
                 android:clickable="true"
                 android:ellipsize="marquee"
                 android:focusable="true"
@@ -167,7 +167,7 @@
 
 
             <ImageView
-                android:id="@+id/ivRight"
+                android:id="@+id/fullScreenIv"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginLeft="9dp"

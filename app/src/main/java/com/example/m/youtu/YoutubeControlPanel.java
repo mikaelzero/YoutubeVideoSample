@@ -26,7 +26,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
 
     private final String TAG = YoutubeControlPanel.class.getSimpleName();
 
-    private final long autoDismissTime = 3000;
     private int mWhat;
     private int mExtra;
     protected GestureDetector mGestureDetector;
@@ -38,7 +37,7 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     private TextView current;
     private TextView total;
     private ProgressBar loading;
-    private ImageView ivLeft;
+    private ImageView downIv;
     private ImageView video_cover;
     private ImageView fullScreenIv;
     private LinearLayout llAlert;
@@ -48,14 +47,13 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     private LinearLayout llOperation;
     private LinearLayout llProgressTime;
 
-    private Runnable mDismissTask = new Runnable() {
-        @Override
-        public void run() {
-            if (MediaPlayerManager.instance().getCurrentVideoView() == mTarget && MediaPlayerManager.instance().isPlaying()) {
-                hideUI(layout_bottom, layout_top, startCenterIv);
-            }
-        }
-    };
+    public ImageView getFullScreenIv() {
+        return fullScreenIv;
+    }
+
+    public ImageView getDownIv() {
+        return downIv;
+    }
 
     public YoutubeControlPanel(Context context) {
         super(context);
@@ -84,19 +82,17 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
         current = findViewById(R.id.current);
         total = findViewById(R.id.total);
         loading = findViewById(R.id.loading);
-        ivLeft = findViewById(R.id.ivLeft);
+        downIv = findViewById(R.id.downIv);
         video_cover = findViewById(R.id.video_cover);
         llAlert = findViewById(R.id.llAlert);
         tvAlert = findViewById(R.id.tvAlert);
         tvConfirm = findViewById(R.id.tvConfirm);
-        fullScreenIv = findViewById(R.id.ivRight);
+        fullScreenIv = findViewById(R.id.fullScreenIv);
         tvTitle = findViewById(R.id.tvTitle);
         llOperation = findViewById(R.id.llOperation);
         llProgressTime = findViewById(R.id.llProgressTime);
 
-
-        fullScreenIv.setOnClickListener(this);
-        ivLeft.setOnClickListener(this);
+        downIv.setOnClickListener(this);
         bottom_seek_progress.setOnSeekBarChangeListener(this);
         startCenterIv.setOnClickListener(this);
         setOnClickListener(new OnClickListener() {
@@ -107,13 +103,11 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
                     return;
                 }
                 if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PLAYING) {
-                    cancelDismissTask();
                     if (layout_bottom.getVisibility() != VISIBLE) {
                         showUI(startCenterIv,layout_bottom, layout_top);
                     } else {
                         hideUI(layout_top, layout_bottom,startCenterIv);
                     }
-                    startDismissTask();
                 }
             }
         });
@@ -172,7 +166,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
         startCenterIv.setBackgroundResource(R.drawable.pause_white);
         showUI(startCenterIv,layout_bottom, layout_top);
         hideUI(video_cover, loading, llOperation, llProgressTime);
-        startDismissTask();
     }
 
     @Override
@@ -210,7 +203,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
 
     @Override
     public void onProgressUpdate(final int progress, final long position, final long duration) {
-//        Log.e(TAG, "progress:" + progress + "     position:" + position + "    duration:" + duration);
         post(new Runnable() {
             @Override
             public void run() {
@@ -226,14 +218,14 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
         if (mTarget != null && mTarget.getWindowType() == VideoView.WindowType.FULLSCREEN) {
             hideUI(fullScreenIv);
         }
-        showUI(ivLeft);
+        showUI(downIv);
         SynchronizeViewState();
     }
 
     @Override
     public void onExitSecondScreen() {
         if (mTarget != null && mTarget.getWindowType() != VideoView.WindowType.TINY) {
-            ivLeft.setVisibility(GONE);
+            downIv.setVisibility(GONE);
         }
         showUI(fullScreenIv);
         SynchronizeViewState();
@@ -243,7 +235,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     public void onStartTrackingTouch(SeekBar seekBar) {
         Log.i(TAG, "bottomProgress onStartTrackingTouch [" + this.hashCode() + "] ");
         MediaPlayerManager.instance().cancelProgressTimer();
-        cancelDismissTask();
         ViewParent vpdown = getParent();
         while (vpdown != null) {
             vpdown.requestDisallowInterceptTouchEvent(true);
@@ -255,7 +246,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     public void onStopTrackingTouch(SeekBar seekBar) {
         Log.i(TAG, "bottomProgress onStopTrackingTouch [" + this.hashCode() + "] ");
         MediaPlayerManager.instance().startProgressTimer();
-        startDismissTask();
         ViewParent vpup = getParent();
         while (vpup != null) {
             vpup.requestDisallowInterceptTouchEvent(false);
@@ -296,7 +286,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
 
     @Override
     public void onClick(View v) {
-        cancelDismissTask();
         int id = v.getId();
         if (id == R.id.ivLeft) {
             if (mTarget == null) return;
@@ -338,7 +327,6 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
             }
 
         }
-        startDismissTask();
     }
 
     @Override
@@ -368,21 +356,5 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
         }
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        cancelDismissTask();
-    }
 
-    private void startDismissTask() {
-        cancelDismissTask();
-        postDelayed(mDismissTask, autoDismissTime);
-    }
-
-    private void cancelDismissTask() {
-        Handler handler = getHandler();
-        if (handler != null && mDismissTask != null) {
-            handler.removeCallbacks(mDismissTask);
-        }
-    }
 }
