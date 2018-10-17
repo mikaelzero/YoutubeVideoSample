@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
         mYouTuDraggingView.setCallback(this);
 
         controlPanel = new YoutubeControlPanel(this);
+        controlPanel.setYouTuDraggingView(mYouTuDraggingView);
         mVideoView.setControlPanel(controlPanel);
         controlPanel.getFullScreenIv().setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,12 +72,6 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
         mVideoView.setUp("http://vfx.mtime.cn/Video/2018/06/01/mp4/180601113115887894.mp4");
         mVideoView.start();
         MediaPlayerManager.instance().setScreenScale(ScaleType.SCALE_CENTER_CROP);
-    }
-
-    @Override
-    protected void onDestroy() {
-        MediaPlayerManager.instance().releaseMediaPlayer();
-        super.onDestroy();
     }
 
     @Override
@@ -102,21 +97,37 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
 
     @Override
     public void onVideoViewHide() {
-
+        MediaPlayerManager.instance().releasePlayerAndView(this);
     }
 
     @Override
     public void videoSize(int width, int height) {
     }
 
+    @Override
+    public void onBackPressed() {
+        if (MediaPlayerManager.instance().backPress()) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        MediaPlayerManager.instance().pause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        MediaPlayerManager.instance().releasePlayerAndView(this);
+    }
+
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && mYouTuDraggingView.getNowStateScale() == 1f) {
-            mYouTuDraggingView.goMin();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
+        return mYouTuDraggingView.handleKeyDown(keyCode) || super.onKeyDown(keyCode, event);
     }
 
 }

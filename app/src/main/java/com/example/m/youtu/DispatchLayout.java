@@ -14,6 +14,7 @@ public class DispatchLayout extends LinearLayout {
     private int dy;
     int firstClickY = 0;
     int touchSlop = 8;
+    int scrollY;
     VelocityTracker mVelocityTracker;
     YouTuDraggingView parentView;
 
@@ -55,9 +56,10 @@ public class DispatchLayout extends LinearLayout {
                 break;
             case MotionEvent.ACTION_MOVE:
                 mVelocityTracker.addMovement(ev);
+                dy = y - mLastY;
+                scrollY = Math.abs(scrollY) + Math.abs(dy);
                 //drag
                 if (Math.abs(y - mClickY) > touchSlop) {
-                    dy = y - mLastY;
                     int newMarY = parentView.mBackgroundViewWrapper.getMarginTop() + dy;
                     if (newMarY > parentView.mRangeScrollY && parentView.nowStateScale == parentView.MIN_RATIO_HEIGHT &&
                             parentView.mBackgroundViewWrapper.getMarginTop() >= (int) parentView.mRangeScrollY) {
@@ -71,13 +73,17 @@ public class DispatchLayout extends LinearLayout {
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
                 firstClickY = 0;
-                if (Math.abs(y - mClickY) > touchSlop) {
+                if (Math.abs(scrollY) > touchSlop) {
+                    scrollY = 0;
                     mVelocityTracker.computeCurrentVelocity(100);
                     float yVelocity = Math.abs(mVelocityTracker.getYVelocity());
                     mVelocityTracker.clear();
                     mVelocityTracker.recycle();
                     parentView.confirmState(yVelocity, dy);
+                    //直接拦截  不分发事件 不让点击
+                    return true;
                 }
+                scrollY = 0;
 
         }
         mLastY = y;

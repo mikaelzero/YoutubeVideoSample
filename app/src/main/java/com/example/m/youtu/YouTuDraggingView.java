@@ -12,19 +12,16 @@ import android.content.ContextWrapper;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.hardware.SensorManager;
 import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.OrientationEventListener;
-import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
@@ -49,6 +46,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
         void status(int status);
     }
+
 
     enum IconType {
         PAUSE,
@@ -107,6 +105,8 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     OrientationEventListener mOrientationListener;
     private int isRotate;//0 代表方向锁定，1 代表没方向锁定
     private long orientationListenerDelayTime = 0;
+    boolean isPortraitToLandscape = false;
+    boolean isLandscapeToPortrait = false;
 
     public YouTuDraggingView(Context context) {
         this(context, null);
@@ -124,9 +124,11 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
     private void init() {
         mActivity = getActivityFromView(this);
+        activityFullscreen = (mActivity.getWindow().getAttributes().flags & WindowManager.LayoutParams.FLAG_FULLSCREEN) == WindowManager.LayoutParams.FLAG_FULLSCREEN;
         addView(LayoutInflater.from(getContext()).inflate(R.layout.youtu_dispatch, null), 0);
         mBackgroundView = findViewById(R.id.backgroundView);
         View mTopView = findViewById(R.id.videoView);
+        View videoParentLayout = findViewById(R.id.videoParentLayout);
         mDetailView = findViewById(R.id.detailView);
 
         titleLayout = findViewById(R.id.titleLayout);
@@ -140,6 +142,8 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         mBackgroundView.setOnClickListener(this);
         pauseLayout.setOnClickListener(this);
         closeLayout.setOnClickListener(this);
+        videoParentLayout.setOnClickListener(this);
+
 
         //初始化包装类
         mBackgroundViewWrapper = new MarginViewWrapper(mBackgroundView);
@@ -166,38 +170,29 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
                     e.printStackTrace();
                 }
                 if (isRotate == 0) return;
-                if ((orientation >= 300 || orientation <= 30) && System.currentTimeMillis() - orientationListenerDelayTime > 1000) { //屏幕顶部朝上
-//                    if (getNowStateScale() == 1f) {
-//                        goPortraitMax();
-//                    } else {
-//                        goPortraitMin();
-//                    }
-                    e("竖屏");
+                if ((orientation >= 300 || orientation <= 30) && System.currentTimeMillis() - orientationListenerDelayTime > 1000) {
+                    if (isLandscapeToPortrait) {
+                        isLandscapeToPortrait = false;
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                    }
                     orientationListenerDelayTime = System.currentTimeMillis();
                 } else if (orientation >= 260 && orientation <= 280
-                        && System.currentTimeMillis() - orientationListenerDelayTime > 1000) { //屏幕左边朝上
-                    //当前屏幕为横屏
-//                    if (getNowStateScale() == 1f) {
-//                        goFullScreen();
-//                    } else {
-//                        goLandscapeMin();
-//                    }
-                    e("横屏");
+                        && System.currentTimeMillis() - orientationListenerDelayTime > 1000) {
+                    if (isPortraitToLandscape) {
+                        isPortraitToLandscape = false;
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                    }
                     orientationListenerDelayTime = System.currentTimeMillis();
                 } else if (orientation >= 70 && orientation <= 90
-                        && System.currentTimeMillis() - orientationListenerDelayTime > 1000) { //屏幕右边朝上
-                    //当前屏幕为横屏
-//                    if (getNowStateScale() == 1f) {
-//                        goFullScreen();
-//                    } else {
-//                        goLandscapeMin();
-//                    }
-                    e("横屏");
+                        && System.currentTimeMillis() - orientationListenerDelayTime > 1000) {
+                    if (isPortraitToLandscape) {
+                        isPortraitToLandscape = false;
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                    }
                     orientationListenerDelayTime = System.currentTimeMillis();
                 }
             }
         };
-
         if (mOrientationListener.canDetectOrientation()) {
             mOrientationListener.enable();
         } else {
@@ -278,6 +273,16 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         }
     }
 
+    void changeStatus(IconType iconType){
+        if (iconType == IconType.PLAY) {
+            statusType = IconType.PAUSE;
+            pauseIv.setBackgroundResource(R.drawable.play);
+        }else if (iconType == IconType.PAUSE) {
+            statusType = IconType.PLAY;
+            pauseIv.setBackgroundResource(R.drawable.pause);
+        }
+    }
+
     void updateDismissView(int m) {
         ViewGroup.LayoutParams params = getLayoutParams();
         params.width = -1;
@@ -334,7 +339,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         if (detailBottomOffset >= bottomHeight) {
             detailBottomOffset = Math.round(bottomHeight);
         }
-
         if (m >= mRangeNodeScrollY) {
             mDetailView.setVisibility(View.GONE);
             float alphaPercent = (m - mRangeNodeScrollY) / (mRangeScrollY - mRangeNodeScrollY);
@@ -430,10 +434,8 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     void confirmState(float v, int dy) {
         if (mBackgroundViewWrapper.getMarginTop() >= mRangeScrollY) {
             if (v > 15) {
-
                 dismissView();
             } else {
-
                 goMin(true);
             }
 
@@ -505,6 +507,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             mActivity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
+
         mCallback.status(STATUS_MAX);
         mBackgroundViewWrapper.setWidth(DensityUtil.getScreenW(getContext()));
         mBackgroundViewWrapper.setHeight(DensityUtil.getScreenH(getContext()));
@@ -556,7 +559,6 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
                 mBackgroundView.setAlpha(isDismissToMin ? (value / fullTop) : 1);
-
                 updateVideoView((int) value);
                 if (value == mRangeScrollY) {
                     ViewGroup.LayoutParams p = getLayoutParams();
@@ -678,7 +680,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.backgroundView:
+            case R.id.videoParentLayout:
                 if (nowStateScale == MIN_RATIO_HEIGHT) {
                     goMax();
                 }
@@ -699,47 +701,51 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         }
     }
 
+
     void fullScreenChange() {
-        //0 传感器关闭 1 开启
-        int screenChange = 1;
-        try {
-            screenChange = Settings.System.getInt(getContext().getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
-        } catch (Settings.SettingNotFoundException e) {
-            e.printStackTrace();
-        }
         if (isLandscape()) {
-            mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            isLandscapeToPortrait = true;
+            mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
         } else {
-            mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            isPortraitToLandscape = true;
+            mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         }
-//        if (screenChange == 1) {
-//            mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-//        }
     }
 
+    boolean handleKeyDown(int keyCode ) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && getNowStateScale() == 1f) {
+            if (isLandscape()) {
+                fullScreenGoMin();
+            } else {
+                goMin();
+            }
+            return true;
+        }
+        return false;
+    }
 
     public void e(String msg) {
         Log.e("Youtu", msg);
     }
 
-//    @Override
-//    protected void onConfigurationChanged(Configuration newConfig) {
-//        super.onConfigurationChanged(newConfig);
-//        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-//            //当前屏幕为横屏
-//            if (getNowStateScale() == 1f) {
-//                goFullScreen();
-//            } else {
-//                goLandscapeMin();
-//            }
-//
-//        } else {
-//            //当前屏幕为竖屏
-//            if (getNowStateScale() == 1f) {
-//                goPortraitMax();
-//            } else {
-//                goPortraitMin();
-//            }
-//        }
-//    }
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            //当前屏幕为横屏
+            if (getNowStateScale() == 1f) {
+                goFullScreen();
+            } else {
+                goLandscapeMin();
+            }
+
+        } else {
+            //当前屏幕为竖屏
+            if (getNowStateScale() == 1f) {
+                goPortraitMax();
+            } else {
+                goPortraitMin();
+            }
+        }
+    }
 }

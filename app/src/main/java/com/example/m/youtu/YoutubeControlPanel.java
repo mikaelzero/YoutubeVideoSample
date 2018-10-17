@@ -46,6 +46,7 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     private TextView tvTitle;
     private LinearLayout llOperation;
     private LinearLayout llProgressTime;
+    YouTuDraggingView youTuDraggingView;
 
     public ImageView getFullScreenIv() {
         return fullScreenIv;
@@ -65,6 +66,10 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
 
     public YoutubeControlPanel(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+    }
+
+    public void setYouTuDraggingView(YouTuDraggingView youTuDraggingView) {
+        this.youTuDraggingView = youTuDraggingView;
     }
 
     @Override
@@ -102,12 +107,10 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
                 if (!mTarget.isCurrentPlaying()) {
                     return;
                 }
-                if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PLAYING) {
-                    if (layout_bottom.getVisibility() != VISIBLE) {
-                        showUI(startCenterIv,layout_bottom, layout_top);
-                    } else {
-                        hideUI(layout_top, layout_bottom,startCenterIv);
-                    }
+                if (layout_bottom.getVisibility() != VISIBLE) {
+                    showUI(startCenterIv, layout_bottom, layout_top);
+                } else {
+                    hideUI(layout_top, layout_bottom, startCenterIv);
                 }
             }
         });
@@ -142,9 +145,10 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
 
     @Override
     public void onStateIdle() {
-        hideUI(startCenterIv,layout_bottom, layout_top, loading, llAlert);
+        hideUI(startCenterIv, layout_bottom, layout_top, loading, llAlert);
         showUI(video_cover);
         startCenterIv.setBackgroundResource(R.drawable.play_white);
+        youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
         if (mTarget != null && mTarget.getParentVideoView() != null && mTarget.getParentVideoView().getControlPanel() != null) {
             TextView title = mTarget.getParentVideoView().getControlPanel().findViewById(R.id.tvTitle);
             tvTitle.setText(title.getText() == null ? "" : title.getText());
@@ -164,21 +168,24 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     @Override
     public void onStatePlaying() {
         startCenterIv.setBackgroundResource(R.drawable.pause_white);
-        showUI(startCenterIv,layout_bottom, layout_top);
+        youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PAUSE);
+        showUI(startCenterIv, layout_bottom, layout_top);
         hideUI(video_cover, loading, llOperation, llProgressTime);
     }
 
     @Override
     public void onStatePaused() {
         startCenterIv.setBackgroundResource(R.drawable.play_white);
-        showUI(startCenterIv,layout_bottom);
+        youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
+        showUI(startCenterIv, layout_bottom);
         hideUI(video_cover, loading, llOperation, llProgressTime);
     }
 
     @Override
     public void onStatePlaybackCompleted() {
         startCenterIv.setBackgroundResource(R.drawable.play_white);
-        showUI(startCenterIv,layout_bottom);
+        youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
+        showUI(startCenterIv, layout_bottom);
         hideUI(loading);
         if (mTarget.getWindowType() == VideoView.WindowType.FULLSCREEN || mTarget.getWindowType() == VideoView.WindowType.TINY) {
             showUI(layout_top);
@@ -287,28 +294,7 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     @Override
     public void onClick(View v) {
         int id = v.getId();
-        if (id == R.id.ivLeft) {
-            if (mTarget == null) return;
-            if (mTarget.getWindowType() == VideoView.WindowType.FULLSCREEN) {
-                mTarget.exitFullscreen();
-            } else if (mTarget.getWindowType() == VideoView.WindowType.TINY) {
-                mTarget.exitTinyWindow();
-            }
-        } else if (id == R.id.ivRight) {
-            if (mTarget == null) return;
-            if (mTarget.getWindowType() != VideoView.WindowType.FULLSCREEN) {
-                //new VideoView
-                VideoView videoView = new VideoView(getContext());
-                //set parent
-                videoView.setParentVideoView(mTarget);
-                videoView.setUp(mTarget.getDataSourceObject(), VideoView.WindowType.FULLSCREEN, mTarget.getData());
-                videoView.setControlPanel(new ControlPanel(getContext()));
-                //startCenterIv fullscreen
-                videoView.startFullscreen(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                //MediaPlayerManager.instance().startFullscreen(videoView, ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            }
-
-        }  else if (id == R.id.startCenterIv) {
+        if (id == R.id.startCenterIv) {
             if (mTarget == null) {
                 return;
             }
