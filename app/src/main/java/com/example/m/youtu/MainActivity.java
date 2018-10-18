@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
 
     private void playVideo() {
         mYouTuDraggingView.show();
-        mVideoView.setUp("http://vfx.mtime.cn/Video/2018/06/01/mp4/180601113115887894.mp4");
+        mVideoView.setUp("https://github.com/moyokoo/Media/blob/master/Azshara.mp4?raw=true");
         mVideoView.start();
         MediaPlayerManager.instance().setScreenScale(ScaleType.SCALE_CENTER_CROP);
     }
