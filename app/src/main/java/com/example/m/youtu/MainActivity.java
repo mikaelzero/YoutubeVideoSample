@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements YouTuDraggingView
 
     @Override
     public void status(int status) {
-        controlPanel.setVisibility(status == 1 ? View.VISIBLE : View.GONE);
+        controlPanel.showOrHide(status);
     }
 
     @Override

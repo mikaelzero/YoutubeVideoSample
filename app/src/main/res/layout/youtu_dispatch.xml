@@ -58,8 +58,8 @@
 
                 <ImageView
                     android:id="@+id/pauseIv"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     tools:src="@drawable/play" />
@@ -72,8 +72,8 @@
 
                 <ImageView
                     android:id="@+id/closeIv"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:src="@drawable/close" />

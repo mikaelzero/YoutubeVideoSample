@@ -12,18 +12,22 @@ import android.content.ContextWrapper;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+
+import org.salient.artplayer.MediaPlayerManager;
 
 /**
  * Created by moyokoo on 2018/10/11.
@@ -34,8 +38,9 @@ import android.widget.RelativeLayout;
 
 public class YouTuDraggingView extends RelativeLayout implements View.OnClickListener {
 
-    final int STATUS_MAX = 1;
-    final int STATUS_MIN = 0;
+    static final int STATUS_MAX = 1;
+    static final int STATUS_MIN = 0;
+    static final int STATUS_DRAG = 2;
 
     interface Callback {
         void onVideoViewHide();
@@ -65,6 +70,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     View closeIv;
     View pauseLayout;
     View closeLayout;
+    View mTopView;
     Activity mActivity;
 
     MarginViewWrapper mBackgroundViewWrapper;
@@ -84,7 +90,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
     //节点最小的缩放比例
     float MIN_RATIO_HEIGHT_NODE = 0.45f;
     //最小的缩放比例
-    float MIN_RATIO_HEIGHT = 0.35f;
+    static float MIN_RATIO_HEIGHT = 0.35f;
     float MIN_RATIO_WIDTH = 0.9f;
     //播放器比例
     static final float VIDEO_RATIO = 16f / 9f;
@@ -127,7 +133,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         activityFullscreen = (mActivity.getWindow().getAttributes().flags & WindowManager.LayoutParams.FLAG_FULLSCREEN) == WindowManager.LayoutParams.FLAG_FULLSCREEN;
         addView(LayoutInflater.from(getContext()).inflate(R.layout.youtu_dispatch, null), 0);
         mBackgroundView = findViewById(R.id.backgroundView);
-        View mTopView = findViewById(R.id.videoView);
+        mTopView = findViewById(R.id.videoView);
         View videoParentLayout = findViewById(R.id.videoParentLayout);
         mDetailView = findViewById(R.id.detailView);
 
@@ -273,11 +279,11 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         }
     }
 
-    void changeStatus(IconType iconType){
+    void changeStatus(IconType iconType) {
         if (iconType == IconType.PLAY) {
             statusType = IconType.PAUSE;
             pauseIv.setBackgroundResource(R.drawable.play);
-        }else if (iconType == IconType.PAUSE) {
+        } else if (iconType == IconType.PAUSE) {
             statusType = IconType.PLAY;
             pauseIv.setBackgroundResource(R.drawable.pause);
         }
@@ -307,7 +313,7 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
 
     void updateVideoView(int m) {
         if (mBackgroundViewWrapper.getMarginTop() > 0) {
-            mCallback.status(STATUS_MIN);
+            mCallback.status(STATUS_DRAG);
         }
         //如果当前状态是最小化，先把我们的的布局宽高设置为MATCH_PARENT
         if (nowStateScale == MIN_RATIO_HEIGHT) {
@@ -578,6 +584,14 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         return nowStateScale;
     }
 
+    public boolean isMin() {
+        return nowStateScale == MIN_RATIO_HEIGHT;
+    }
+
+    public boolean isMax() {
+        return nowStateScale == 1f;
+    }
+
     public void show() {
         setVisibility(VISIBLE);
         statusType = IconType.PLAY;
@@ -689,6 +703,10 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
                 fullScreenGoMin();
                 break;
             case R.id.pauseLayout:
+                if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.ERROR ||
+                        MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PREPARING) {
+                    return;
+                }
                 notifyStatus();
                 break;
             case R.id.closeLayout:
@@ -712,9 +730,12 @@ public class YouTuDraggingView extends RelativeLayout implements View.OnClickLis
         }
     }
 
-    boolean handleKeyDown(int keyCode ) {
+    boolean handleKeyDown(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_BACK && getNowStateScale() == 1f) {
-            if (isLandscape()) {
+            if (isPortraitToLandscape) {
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+                goPortraitMax();
+            } else if (isLandscape()) {
                 fullScreenGoMin();
             } else {
                 goMin();

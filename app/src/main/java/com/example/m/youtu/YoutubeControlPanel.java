@@ -1,14 +1,14 @@
 package com.example.m.youtu;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.pm.ActivityInfo;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewParent;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -19,8 +19,9 @@ import org.salient.artplayer.AbsControlPanel;
 import org.salient.artplayer.MediaPlayerManager;
 import org.salient.artplayer.Utils;
 import org.salient.artplayer.VideoView;
-import org.salient.artplayer.ui.ControlPanel;
 import org.salient.artplayer.ui.VideoGestureListener;
+
+import java.util.List;
 
 public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSeekBarChangeListener {
 
@@ -40,12 +41,14 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     private ImageView downIv;
     private ImageView video_cover;
     private ImageView fullScreenIv;
-    private LinearLayout llAlert;
+    private LinearLayout errorLayout;
     private TextView tvAlert;
     private TextView tvConfirm;
     private TextView tvTitle;
     private LinearLayout llOperation;
     private LinearLayout llProgressTime;
+    View minErrorIv;
+    FrameLayout backgroundLayout;
     YouTuDraggingView youTuDraggingView;
 
     public ImageView getFullScreenIv() {
@@ -80,6 +83,8 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     @Override
     protected void init(Context context) {
         super.init(context);
+        minErrorIv = findViewById(R.id.minErrorIv);
+        backgroundLayout = findViewById(R.id.backgroundLayout);
         startCenterIv = findViewById(R.id.startCenterIv);
         bottom_seek_progress = findViewById(R.id.bottom_seek_progress);
         layout_bottom = findViewById(R.id.layout_bottom);
@@ -89,7 +94,7 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
         loading = findViewById(R.id.loading);
         downIv = findViewById(R.id.downIv);
         video_cover = findViewById(R.id.video_cover);
-        llAlert = findViewById(R.id.llAlert);
+        errorLayout = findViewById(R.id.errorLayout);
         tvAlert = findViewById(R.id.tvAlert);
         tvConfirm = findViewById(R.id.tvConfirm);
         fullScreenIv = findViewById(R.id.fullScreenIv);
@@ -104,13 +109,22 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
             @Override
             public void onClick(View v) {
                 if (mTarget == null) return;
-                if (!mTarget.isCurrentPlaying()) {
+                if (youTuDraggingView.isMin()) {
+                    youTuDraggingView.goMax();
+                    return;
+                }
+                if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.ERROR) {
                     return;
                 }
                 if (layout_bottom.getVisibility() != VISIBLE) {
-                    showUI(startCenterIv, layout_bottom, layout_top);
+                    showUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress);
+                    bgAlphaToBlack();
                 } else {
-                    hideUI(layout_top, layout_bottom, startCenterIv);
+                    hideUI(layout_top, layout_bottom, startCenterIv, bottom_seek_progress);
+                    bgAlphaToTrans();
+                }
+                if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PREPARING) {
+                    hideUI(bottom_seek_progress, startCenterIv);
                 }
             }
         });
@@ -123,29 +137,92 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
                 return videoGestureListener.onTouch(v, event);
             }
         });
+        bgAlphaToBlack();
+    }
+
+    /**
+     * @param status 1 max 0 min
+     */
+    void showOrHide(int status) {
+        if (status == YouTuDraggingView.STATUS_MAX) {
+            setVisibility(View.VISIBLE);
+            //加载状态
+            if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PREPARING) {
+                //正在缓冲
+                showUI(loading);
+                bgAlphaToTrans();
+                hideUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress, errorLayout, minErrorIv);
+            } else if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.ERROR) {
+                showUI(errorLayout);
+                hideUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress, minErrorIv, loading);
+            } else {
+                showUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress);
+                hideUI(errorLayout, loading, minErrorIv);
+                bgAlphaToBlack();
+            }
+        } else if (status == YouTuDraggingView.STATUS_MIN) {
+            setVisibility(View.VISIBLE);
+            //加载状态
+            if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PREPARING) {
+                //正在缓冲
+                showUI(loading);
+                bgAlphaToTrans();
+            } else if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.ERROR) {
+                showUI(minErrorIv);
+                hideUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress, errorLayout, loading);
+            } else {
+                setVisibility(View.GONE);
+                bgAlphaToTrans();
+            }
+        } else if (status == YouTuDraggingView.STATUS_DRAG) {
+            if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.PREPARING) {
+                setVisibility(View.VISIBLE);
+                showUI(loading);
+                bgAlphaToTrans();
+            } else if (MediaPlayerManager.instance().getPlayerState() == MediaPlayerManager.PlayerState.ERROR) {
+                setVisibility(View.VISIBLE);
+                showUI(minErrorIv);
+                hideUI(startCenterIv, layout_bottom, layout_top, bottom_seek_progress, errorLayout, loading);
+            } else {
+                setVisibility(View.GONE);
+            }
+        }
+    }
+
+    void bgAlphaToBlack() {
+        ObjectAnimator.ofFloat(backgroundLayout, "alpha", backgroundLayout.getAlpha(), 0.8f)
+                .setDuration(300).start();
+    }
+
+    void bgAlphaToTrans() {
+        ObjectAnimator.ofFloat(backgroundLayout, "alpha", backgroundLayout.getAlpha(), 0f)
+                .setDuration(300).start();
     }
 
     @Override
     public void onStateError() {
-        hideUI(startCenterIv, layout_top, layout_bottom, loading);
-        showUI(llAlert);
-        //MediaPlayerManager.instance().releaseMediaPlayer();
-        tvAlert.setText("oops~~ unknown error");
-        tvConfirm.setText("retry");
+        tvAlert.setText("播放出现错误");
+        tvConfirm.setText("重试");
         tvConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (youTuDraggingView.isMin()) {
+                    youTuDraggingView.goMax();
+                    return;
+                }
                 if (mTarget != null) {
-                    hideUI(llAlert);
+                    hideUI(errorLayout);
                     mTarget.start();
                 }
             }
         });
+        showOrHide(youTuDraggingView.isMax() ? 1 : 0);
     }
 
     @Override
     public void onStateIdle() {
-        hideUI(startCenterIv, layout_bottom, layout_top, loading, llAlert);
+        hideUI(startCenterIv, layout_bottom, layout_top, loading, errorLayout, bottom_seek_progress);
+        bgAlphaToTrans();
         showUI(video_cover);
         startCenterIv.setBackgroundResource(R.drawable.play_white);
         youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
@@ -169,24 +246,21 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     public void onStatePlaying() {
         startCenterIv.setBackgroundResource(R.drawable.pause_white);
         youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PAUSE);
-        showUI(startCenterIv, layout_bottom, layout_top);
-        hideUI(video_cover, loading, llOperation, llProgressTime);
+        showOrHide(youTuDraggingView.isMax() ? 1 : 0);
     }
 
     @Override
     public void onStatePaused() {
         startCenterIv.setBackgroundResource(R.drawable.play_white);
         youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
-        showUI(startCenterIv, layout_bottom);
-        hideUI(video_cover, loading, llOperation, llProgressTime);
+        showOrHide(youTuDraggingView.isMax() ? 1 : 0);
     }
 
     @Override
     public void onStatePlaybackCompleted() {
         startCenterIv.setBackgroundResource(R.drawable.play_white);
         youTuDraggingView.changeStatus(YouTuDraggingView.IconType.PLAY);
-        showUI(startCenterIv, layout_bottom);
-        hideUI(loading);
+        showOrHide(youTuDraggingView.isMax() ? 1 : 0);
         if (mTarget.getWindowType() == VideoView.WindowType.FULLSCREEN || mTarget.getWindowType() == VideoView.WindowType.TINY) {
             showUI(layout_top);
         }
@@ -277,14 +351,14 @@ public class YoutubeControlPanel extends AbsControlPanel implements SeekBar.OnSe
     //显示WiFi状态提醒
     public void showWifiAlert() {
         hideUI(startCenterIv, layout_bottom, layout_top, loading);
-        showUI(llAlert);
+        showUI(errorLayout);
         tvAlert.setText("Is in non-WIFI");
         tvConfirm.setText("continue");
         tvConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mTarget != null) {
-                    hideUI(llAlert);
+                    hideUI(errorLayout);
                     mTarget.start();
                 }
             }
